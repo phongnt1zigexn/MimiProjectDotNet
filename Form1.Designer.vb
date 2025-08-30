@@ -25,93 +25,119 @@ Partial Class Form1
         Label1 = New Label()
         txtTask = New TextBox()
         btnAdd = New Button()
+        btnToggleDone = New Button()
         btnDelete = New Button()
-        btnSave = New Button()
-        btnLoad = New Button()
-        clbTasks = New CheckedListBox()
-        btnClear = New Button()
+        lstTasks = New ListBox()
+        cmbPriority = New ComboBox()
+        lbTask = New Label()
+        Label2 = New Label()
+        btnEdit = New Button()
         SuspendLayout()
         ' 
         ' Label1
         ' 
         Label1.AutoSize = True
-        Label1.Location = New Point(92, 40)
+        Label1.Font = New Font("Segoe UI", 24F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        Label1.Location = New Point(331, 23)
         Label1.Name = "Label1"
-        Label1.Size = New Size(57, 15)
+        Label1.Size = New Size(162, 45)
         Label1.TabIndex = 0
         Label1.Text = "To-do list"
         ' 
         ' txtTask
         ' 
-        txtTask.Location = New Point(92, 78)
+        txtTask.Location = New Point(100, 114)
         txtTask.Name = "txtTask"
-        txtTask.Size = New Size(531, 23)
+        txtTask.Size = New Size(356, 23)
         txtTask.TabIndex = 1
         ' 
         ' btnAdd
         ' 
-        btnAdd.Location = New Point(92, 311)
+        btnAdd.Location = New Point(100, 359)
         btnAdd.Name = "btnAdd"
         btnAdd.Size = New Size(75, 23)
         btnAdd.TabIndex = 2
         btnAdd.Text = "Add"
         btnAdd.UseVisualStyleBackColor = True
         ' 
+        ' btnToggleDone
+        ' 
+        btnToggleDone.Location = New Point(227, 359)
+        btnToggleDone.Name = "btnToggleDone"
+        btnToggleDone.Size = New Size(127, 23)
+        btnToggleDone.TabIndex = 6
+        btnToggleDone.Text = "Mark Done/Undone"
+        btnToggleDone.UseVisualStyleBackColor = True
+        ' 
         ' btnDelete
         ' 
-        btnDelete.Location = New Point(182, 311)
+        btnDelete.Location = New Point(533, 359)
         btnDelete.Name = "btnDelete"
         btnDelete.Size = New Size(113, 23)
-        btnDelete.TabIndex = 4
-        btnDelete.Text = "Delete selected"
+        btnDelete.TabIndex = 7
+        btnDelete.Text = "Delete"
         btnDelete.UseVisualStyleBackColor = True
         ' 
-        ' btnSave
+        ' lstTasks
         ' 
-        btnSave.Location = New Point(301, 311)
-        btnSave.Name = "btnSave"
-        btnSave.Size = New Size(113, 23)
-        btnSave.TabIndex = 6
-        btnSave.Text = "Save"
-        btnSave.UseVisualStyleBackColor = True
+        lstTasks.DrawMode = DrawMode.OwnerDrawFixed
+        lstTasks.FormattingEnabled = True
+        lstTasks.Location = New Point(100, 175)
+        lstTasks.Name = "lstTasks"
+        lstTasks.Size = New Size(546, 148)
+        lstTasks.TabIndex = 10
         ' 
-        ' btnLoad
+        ' cmbPriority
         ' 
-        btnLoad.Location = New Point(420, 311)
-        btnLoad.Name = "btnLoad"
-        btnLoad.Size = New Size(113, 23)
-        btnLoad.TabIndex = 7
-        btnLoad.Text = "Load"
-        btnLoad.UseVisualStyleBackColor = True
+        cmbPriority.DropDownStyle = ComboBoxStyle.DropDownList
+        cmbPriority.FormattingEnabled = True
+        cmbPriority.Items.AddRange(New Object() {"Low", "Medium", "High"})
+        cmbPriority.Location = New Point(525, 114)
+        cmbPriority.Name = "cmbPriority"
+        cmbPriority.Size = New Size(121, 23)
+        cmbPriority.TabIndex = 11
         ' 
-        ' clbTasks
+        ' lbTask
         ' 
-        clbTasks.CheckOnClick = True
-        clbTasks.FormattingEnabled = True
-        clbTasks.Location = New Point(92, 122)
-        clbTasks.Name = "clbTasks"
-        clbTasks.Size = New Size(531, 130)
-        clbTasks.TabIndex = 8
+        lbTask.AutoSize = True
+        lbTask.Font = New Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        lbTask.Location = New Point(246, 86)
+        lbTask.Name = "lbTask"
+        lbTask.Size = New Size(67, 15)
+        lbTask.TabIndex = 12
+        lbTask.Text = "Task Name"
         ' 
-        ' btnClear
+        ' Label2
         ' 
-        btnClear.Location = New Point(539, 311)
-        btnClear.Name = "btnClear"
-        btnClear.Size = New Size(113, 23)
-        btnClear.TabIndex = 9
-        btnClear.Text = "Clear Completed"
-        btnClear.UseVisualStyleBackColor = True
+        Label2.AutoSize = True
+        Label2.Font = New Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        Label2.Location = New Point(563, 86)
+        Label2.Name = "Label2"
+        Label2.Size = New Size(48, 15)
+        Label2.TabIndex = 13
+        Label2.Text = "Priority"
+        ' 
+        ' btnEdit
+        ' 
+        btnEdit.Location = New Point(406, 359)
+        btnEdit.Name = "btnEdit"
+        btnEdit.Size = New Size(75, 23)
+        btnEdit.TabIndex = 14
+        btnEdit.Text = "Edit"
+        btnEdit.UseVisualStyleBackColor = True
         ' 
         ' Form1
         ' 
         AutoScaleDimensions = New SizeF(7F, 15F)
         AutoScaleMode = AutoScaleMode.Font
         ClientSize = New Size(800, 450)
-        Controls.Add(btnClear)
-        Controls.Add(clbTasks)
-        Controls.Add(btnLoad)
-        Controls.Add(btnSave)
+        Controls.Add(btnEdit)
+        Controls.Add(Label2)
+        Controls.Add(lbTask)
+        Controls.Add(cmbPriority)
+        Controls.Add(lstTasks)
         Controls.Add(btnDelete)
+        Controls.Add(btnToggleDone)
         Controls.Add(btnAdd)
         Controls.Add(txtTask)
         Controls.Add(Label1)
@@ -124,10 +150,12 @@ Partial Class Form1
     Friend WithEvents Label1 As Label
     Friend WithEvents txtTask As TextBox
     Friend WithEvents btnAdd As Button
+    Friend WithEvents btnToggleDone As Button
     Friend WithEvents btnDelete As Button
-    Friend WithEvents btnSave As Button
-    Friend WithEvents btnLoad As Button
-    Friend WithEvents clbTasks As CheckedListBox
-    Friend WithEvents btnClear As Button
+    Friend WithEvents lstTasks As ListBox
+    Friend WithEvents cmbPriority As ComboBox
+    Friend WithEvents lbTask As Label
+    Friend WithEvents Label2 As Label
+    Friend WithEvents btnEdit As Button
 
 End Class
