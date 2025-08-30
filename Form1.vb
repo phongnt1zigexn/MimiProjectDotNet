@@ -1,151 +1,163 @@
 ﻿Imports Microsoft.Data.Sqlite
-Imports System.IO
 
 Public Class Form1
-    Private dbFile As String = Path.Combine(Application.StartupPath, "todo.db")
-    Private connString As String = $"Data Source={dbFile}"
-
-    Private Class TaskItem
+    Private connString As String = "Data Source=todo.db"
+    Public Class TaskItem
         Public Property ID As String
-        Public Property Text As String
+        Public Property TaskName As String
         Public Property IsDone As Boolean
+        Public Property Priority As Integer
+
         Public Overrides Function ToString() As String
-            Return Text
+            Return TaskName & If(IsDone, " ✅", "")
         End Function
     End Class
-
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        EnsureDatabase()
+        ' Ensure DB and table exist
+        Using cn As New SqliteConnection(connString)
+            cn.Open()
+            Dim sql As String = "CREATE TABLE IF NOT EXISTS Tasks (" &
+                                "ID TEXT PRIMARY KEY, " &
+                                "TaskName TEXT, " &
+                                "IsDone INTEGER, " &
+                                "Priority INTEGER)"
+            Using cmd As New SqliteCommand(sql, cn)
+                cmd.ExecuteNonQuery()
+            End Using
+        End Using
         LoadTasks()
     End Sub
 
     Private Sub LoadTasks()
-        clbTasks.Items.Clear()
-        Using cn As New SQLiteConnection(connString)
+        lstTasks.Items.Clear()
+
+        Using cn As New SqliteConnection(connString)
             cn.Open()
-            Dim sql As String = "SELECT ID, TaskName, IsDone FROM Tasks ORDER BY ID"
-            Using cmd As New SQLiteCommand(sql, cn)
+            Dim sql As String = "SELECT ID, TaskName, IsDone, Priority FROM Tasks ORDER BY Priority DESC"
+            Using cmd As New SqliteCommand(sql, cn)
                 Using rdr = cmd.ExecuteReader()
                     While rdr.Read()
-                        Dim item As New TaskItem With {
-                            .Id = rdr("ID").ToString(),
-                            .Text = rdr("TaskName").ToString(),
-                            .IsDone = (Convert.ToInt32(rdr("IsDone")) = 1)
+                        Dim task As New TaskItem With {
+                            .ID = rdr.GetString(0),
+                            .TaskName = rdr.GetString(1),
+                            .IsDone = rdr.GetInt32(2) = 1,
+                            .Priority = rdr.GetInt32(3)
                         }
-                        clbTasks.Items.Add(item, item.IsDone)
+                        lstTasks.Items.Add(task)
                     End While
                 End Using
             End Using
         End Using
     End Sub
 
-    Private Sub EnsureDatabase()
-        If Not File.Exists(dbFile) Then
-            ' file is created automatically when connecting
+    Private Sub btnAdd_Click(sender As Object, e As EventArgs) Handles btnAdd.Click
+        If String.IsNullOrWhiteSpace(txtTask.Text) Then
+            MessageBox.Show("Please enter a task name.")
+            Return
         End If
+
+        AddTask(txtTask.Text, cmbPriority.SelectedIndex)
+
+        txtTask.Clear()
+        cmbPriority.SelectedIndex = 0
+        LoadTasks()
+    End Sub
+
+    Private Sub AddTask(taskName As String, priority As Integer)
+        Using cn As New SqliteConnection(connString)
+            cn.Open()
+            Dim sql As String = "INSERT INTO Tasks (ID, TaskName, IsDone, Priority) VALUES (@id, @task, 0, @priority)"
+            Using cmd As New SqliteCommand(sql, cn)
+                cmd.Parameters.AddWithValue("@id", Guid.NewGuid().ToString())
+                cmd.Parameters.AddWithValue("@task", taskName)
+                cmd.Parameters.AddWithValue("@priority", priority)
+                cmd.ExecuteNonQuery()
+            End Using
+        End Using
+    End Sub
+
+    Private Sub lstTasks_DrawItem(sender As Object, e As DrawItemEventArgs) Handles lstTasks.DrawItem
+        If e.Index < 0 Then Return
+
+        Dim task As TaskItem = DirectCast(lstTasks.Items(e.Index), TaskItem)
+
+        e.DrawBackground()
+
+        Dim brush As Brush = Brushes.Black
+        Select Case task.Priority
+            Case 2 : brush = Brushes.Red      ' High
+            Case 1 : brush = Brushes.Orange   ' Medium
+            Case 0 : brush = Brushes.Green    ' Low
+        End Select
+
+        e.Graphics.DrawString(task.ToString(), e.Font, brush, e.Bounds)
+        e.DrawFocusRectangle()
+    End Sub
+
+    Private Sub btnToggleDone_Click(sender As Object, e As EventArgs) Handles btnToggleDone.Click
+        If lstTasks.SelectedIndex = -1 Then
+            MessageBox.Show("Please select a task.")
+            Return
+        End If
+
+        Dim task As TaskItem = DirectCast(lstTasks.SelectedItem, TaskItem)
+        Dim newValue As Integer = If(task.IsDone, 0, 1)
 
         Using cn As New SqliteConnection(connString)
             cn.Open()
-            Dim sql As String = "CREATE TABLE IF NOT EXISTS Tasks (" &
-                            "ID TEXT PRIMARY KEY, " &
-                            "TaskName TEXT, " &
-                            "IsDone INTEGER)"
+            Dim sql As String = "UPDATE Tasks SET IsDone=@done WHERE ID=@id"
             Using cmd As New SqliteCommand(sql, cn)
-                cmd.ExecuteNonQuery()
-            End Using
-        End Using
-    End Sub
-
-    Private Sub btnAdd_Click(sender As Object, e As EventArgs) Handles btnAdd.Click
-        Dim taskText = txtTask.Text.Trim()
-        If taskText = "" Then
-            MessageBox.Show("Enter a task")
-            Return
-        End If
-
-        Dim newItem As New TaskItem With {
-            .ID = Guid.NewGuid().ToString(),
-            .Text = taskText,
-            .IsDone = False
-        }
-
-        ' Insert into DB
-        Using cn As New SQLiteConnection(connString)
-            cn.Open()
-            Dim sql As String = "INSERT INTO Tasks (ID, TaskName, IsDone) VALUES (@id, @name, 0)"
-            Using cmd As New SQLiteCommand(sql, cn)
-                cmd.Parameters.AddWithValue("@id", newItem.ID)
-                cmd.Parameters.AddWithValue("@name", newItem.Text)
+                cmd.Parameters.AddWithValue("@done", newValue)
+                cmd.Parameters.AddWithValue("@id", task.ID)
                 cmd.ExecuteNonQuery()
             End Using
         End Using
 
-        ' Add to UI
-        clbTasks.Items.Add(newItem, False)
-        txtTask.Clear()
-        txtTask.Focus()
+        LoadTasks()
     End Sub
 
     Private Sub btnDelete_Click(sender As Object, e As EventArgs) Handles btnDelete.Click
-        If clbTasks.SelectedItem Is Nothing Then
-            MessageBox.Show("Select a task first.")
+        If lstTasks.SelectedIndex = -1 Then
+            MessageBox.Show("Please select a task.")
             Return
         End If
 
-        Dim selectedItem As TaskItem = CType(clbTasks.SelectedItem, TaskItem)
+        Dim task As TaskItem = DirectCast(lstTasks.SelectedItem, TaskItem)
 
-        ' Delete from DB
-        Using cn As New SQLiteConnection(connString)
+        Using cn As New SqliteConnection(connString)
             cn.Open()
             Dim sql As String = "DELETE FROM Tasks WHERE ID=@id"
-            Using cmd As New SQLiteCommand(sql, cn)
-                cmd.Parameters.AddWithValue("@id", selectedItem.ID)
+            Using cmd As New SqliteCommand(sql, cn)
+                cmd.Parameters.AddWithValue("@id", task.ID)
                 cmd.ExecuteNonQuery()
             End Using
         End Using
 
-        ' Remove from UI
-        clbTasks.Items.Remove(selectedItem)
-    End Sub
-
-    Private Sub btnClear_Click(sender As Object, e As EventArgs) Handles btnClear.Click
-        ' Go backward to safely remove
-        For i As Integer = clbTasks.CheckedItems.Count - 1 To 0 Step -1
-            Dim item As TaskItem = CType(clbTasks.CheckedItems(i), TaskItem)
-
-            Using cn As New SQLiteConnection(connString)
-                cn.Open()
-                Dim sql As String = "DELETE FROM Tasks WHERE ID=@id"
-                Using cmd As New SQLiteCommand(sql, cn)
-                    cmd.Parameters.AddWithValue("@id", item.ID)
-                    cmd.ExecuteNonQuery()
-                End Using
-            End Using
-
-            clbTasks.Items.Remove(item)
-        Next
-    End Sub
-
-    Private Sub btnSave_Click(sender As Object, e As EventArgs) Handles btnSave.Click
-        ' Update completion status to DB
-        For i As Integer = 0 To clbTasks.Items.Count - 1
-            Dim item As TaskItem = CType(clbTasks.Items(i), TaskItem)
-            Dim isDone As Boolean = clbTasks.GetItemChecked(i)
-
-            Using cn As New SQLiteConnection(connString)
-                cn.Open()
-                Dim sql As String = "UPDATE Tasks SET IsDone=@done WHERE ID=@id"
-                Using cmd As New SQLiteCommand(sql, cn)
-                    cmd.Parameters.AddWithValue("@done", If(isDone, 1, 0))
-                    cmd.Parameters.AddWithValue("@id", item.ID)
-                    cmd.ExecuteNonQuery()
-                End Using
-            End Using
-        Next
-        MessageBox.Show("Tasks saved to database.")
-    End Sub
-
-    Private Sub btnLoad_Click(sender As Object, e As EventArgs) Handles btnLoad.Click
         LoadTasks()
+    End Sub
+
+    Private Sub btnEdit_Click(sender As Object, e As EventArgs) Handles btnEdit.Click
+        If lstTasks.SelectedIndex = -1 Then
+            MessageBox.Show("Please select a task to edit.")
+            Return
+        End If
+
+        Dim task As TaskItem = DirectCast(lstTasks.SelectedItem, TaskItem)
+
+        Using editor As New TaskEditorForm(task.TaskName, task.Priority)
+            If editor.ShowDialog() = DialogResult.OK Then
+                Using cn As New SqliteConnection(connString)
+                    cn.Open()
+                    Dim sql As String = "UPDATE Tasks SET TaskName=@name, Priority=@priority WHERE ID=@id"
+                    Using cmd As New SqliteCommand(sql, cn)
+                        cmd.Parameters.AddWithValue("@name", editor.TaskNameValue)
+                        cmd.Parameters.AddWithValue("@priority", editor.PriorityValue)
+                        cmd.Parameters.AddWithValue("@id", task.ID)
+                        cmd.ExecuteNonQuery()
+                    End Using
+                End Using
+                LoadTasks()
+            End If
+        End Using
     End Sub
 End Class
