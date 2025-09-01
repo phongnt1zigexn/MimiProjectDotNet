@@ -55,8 +55,14 @@ Public Class Form1
             MessageBox.Show("Please enter a task name.")
             Return
         End If
+        Dim PriorityValue As Integer
 
-        AddTask(txtTask.Text, cmbPriority.SelectedIndex)
+        If cmbPriority.SelectedIndex = -1 Then
+            PriorityValue = 0
+        Else
+            PriorityValue = cmbPriority.SelectedIndex
+        End If
+        AddTask(txtTask.Text, PriorityValue)
 
         txtTask.Clear()
         cmbPriority.SelectedIndex = 0
